@@ -719,18 +719,22 @@ fun StorageCardContent(
                 Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(icon, null, tint = scheme.primary, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         label,
+                        modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = scheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.width(12.dp))
                     Surface(
                         shape = RoundedCornerShape(50),
                         color = statusDot.copy(alpha = 0.16f),
@@ -742,7 +746,14 @@ fun StorageCardContent(
                         ) {
                             Box(Modifier.size(8.dp).clip(CircleShape).background(statusDot))
                             Spacer(Modifier.width(6.dp))
-                            Text(statusText, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = statusDot)
+                            Text(
+                                statusText,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = statusDot,
+                                maxLines = 1,
+                                softWrap = false
+                            )
                         }
                     }
                 }
