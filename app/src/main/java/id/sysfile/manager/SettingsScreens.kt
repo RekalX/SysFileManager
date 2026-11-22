@@ -644,6 +644,11 @@ fun FormatsScreen(onBack: () -> Unit) {
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                         )
                         FormatRow("TAR (.tar)", listOf(t.chipCreate, t.chipExtract), t.fmtTarDesc)
+                        HorizontalDivider(
+                            Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                        FormatRow("ISO (.iso)", listOf(t.chipExtract, t.chipInspect, t.chipNative), t.fmtIsoDesc)
                     }
                 }
             }
@@ -839,7 +844,7 @@ fun AboutScreen(
                             icon = Icons.Default.Archive,
                             circleColor = Color(0xFF40C4FF),
                             title = t.formatsTitle,
-                            subtitle = "ZIP · TAR · 7Z · RAR · APK · JAR · PDF · payload.bin",
+                            subtitle = "ZIP · TAR · 7Z · RAR · ISO · APK · JAR · PDF · payload.bin",
                             onClick = onFormats
                         )
                     }

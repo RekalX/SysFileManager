@@ -113,14 +113,14 @@ object FileOps {
     private val AUDIO_EXT = setOf("mp3", "wav", "ogg", "m4a", "flac", "aac", "opus", "amr", "mid", "midi")
     private val DOC_EXT = setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "md", "csv", "rtf", "odt", "epub", "prop", "config", "conf", "toml", "log")
     private val APP_EXT = setOf("apk", "xapk", "apks", "aab")
-    private val ARCHIVE_EXT = setOf("zip", "rar", "7z", "tar", "obb", "jar")
+    private val ARCHIVE_EXT = setOf("zip", "rar", "7z", "tar", "obb", "jar", "iso")
 
     /** r183: ekstensi yang isinya sudah terkompresi — DEFLATE ulang
      *  hanya membuang CPU tanpa mengecilkan ukuran. Dipakai zipFiles
      *  dan createEncryptedZip untuk menulis entri STORED. */
     private val INCOMPRESSIBLE_EXTENSIONS = setOf(
         "jpg", "jpeg", "png", "webp", "gif", "mp4", "mkv", "mov", "avi", "webm",
-        "mp3", "aac", "flac", "zip", "gz", "bz2", "xz", "7z", "rar", "apk", "obb"
+        "mp3", "aac", "flac", "zip", "gz", "bz2", "xz", "7z", "rar", "apk", "obb", "iso"
     )
 
     fun extOf(name: String): String {
@@ -1306,6 +1306,7 @@ object ArchiveOps {
             n.endsWith(".zip") -> "zip"
             n.endsWith(".7z") -> "7z"
             n.endsWith(".rar") -> "rar"
+            n.endsWith(".iso") -> "iso"
             n.endsWith(".apk") || n.endsWith(".apks") || n.endsWith(".xapk") || n.endsWith(".aab") -> "zip"
             // OBB expansion file adalah kontainer ZIP (preseden yang sama seperti APK).
             n.endsWith(".obb") -> "zip"
@@ -1338,6 +1339,7 @@ object ArchiveOps {
                 "7z" -> extract7z(file, destDir, onEntry, cancelFlag)
                 "tar" -> extractTar(file, destDir, onEntry, cancelFlag)
                 "rar" -> extractRar(file, destDir, onEntry, cancelFlag)
+                "iso" -> IsoReader.open(file)?.use { it.extractAll(destDir, onEntry, cancelFlag) } ?: false
                 else -> false
             }
         } catch (e: ImgCancelledException) {
@@ -1643,11 +1645,15 @@ object ArchiveOps {
         }
     }
 
-    /** Baca satu entri teks dari arsip ZIP ke memori (tanpa menulis ke disk);
-     *  null bila bukan ZIP, entri tidak ada/direktori, terlalu besar, atau gagal.
-     *  Arsip selain ZIP mengembalikan null — pemanggil memakai jalur cache. */
+    /** Baca satu entri teks dari arsip ZIP/ISO ke memori (tanpa menulis ke disk);
+     *  null bila bukan ZIP/ISO, entri tidak ada/direktori, terlalu besar, atau gagal.
+     *  Arsip selain ZIP/ISO mengembalikan null — pemanggil memakai jalur cache. */
     fun readEntryText(file: File, entryName: String, maxBytes: Int = 1_000_000): String? {
-        if (kindOf(file.name) != "zip") return null
+        val kind = kindOf(file.name)
+        if (kind == "iso") {
+            return IsoReader.open(file)?.use { it.readFileText(entryName, maxBytes) }
+        }
+        if (kind != "zip") return null
         return try {
             ZipFile(file).use { zip ->
                 val entry = zip.getEntry(entryName) ?: return null
@@ -1778,6 +1784,7 @@ object ArchiveOps {
                 "7z" -> list7z(file)
                 "tar" -> listTar(file)
                 "rar" -> listRar(file)
+                "iso" -> IsoReader.open(file)?.use { it.listAllItems() }
                 else -> null
             }
         } catch (e: Exception) {
@@ -1847,7 +1854,7 @@ object ArchiveOps {
     fun archiveBaseName(name: String): String {
         val lower = name.lowercase()
         val suffixes = listOf(
-            ".zip", ".7z", ".rar", ".tar",
+            ".zip", ".7z", ".rar", ".tar", ".iso",
             ".apk", ".apks", ".xapk", ".obb", ".jar"
         )
         for (suffix in suffixes) {
@@ -1888,6 +1895,10 @@ object ArchiveOps {
                 "7z" -> extractSingle7z(file, entryName, out, maxBytes)
                 "tar" -> extractSingleTar(file, entryName, out, maxBytes)
                 "rar" -> extractSingleRar(file, entryName, out, maxBytes)
+                "iso" -> IsoReader.open(file)?.use { reader ->
+                    val entry = reader.resolveEntry(entryName) ?: return@use false
+                    reader.writeEntryTo(entry, out, maxBytes)
+                } ?: false
                 else -> false
             }
         } catch (e: Exception) {
