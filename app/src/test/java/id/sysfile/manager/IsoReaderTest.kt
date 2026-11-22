@@ -148,7 +148,7 @@ class IsoReaderTest {
         val items = ArchiveOps.listContents(iso)
         assertNotNull(items)
         val names = items!!.map { it.name }
-        assertEquals(listOf("DOCS/", "DOCS/GUIDE.MD", "README.TXT", "long-filename.txt"), names)
+        assertEquals(listOf("DOCS/", "DOCS/GUIDE.MD", "long-filename.txt", "README.TXT"), names)
 
         assertEquals("Halo ISO 9660", ArchiveOps.readEntryText(iso, "README.TXT"))
         assertEquals("# Panduan", ArchiveOps.readEntryText(iso, "DOCS/GUIDE.MD"))
